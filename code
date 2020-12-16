@@ -1,0 +1,221 @@
+/*
+*PROJECT CODE
+*CODE WAS CHANGED AFTER RECEIVING INPUT FROM PROFESSOR; AS A RESULT,
+*CODE REFERENCES DATA THAT WERE NOT COVERED IN THE SLIDES
+*/
+
+scp 2019-Oct.zip [username]@[IP_ADDRESS]:/home/[username]
+
+ssh [username]@[IP_ADDRESS]
+
+unzip 2019-Oct.zip
+
+hdfs dfs -mkdir Ecommerce_Behaviour
+
+hdfs dfs -ls
+
+hdfs dfs -put 2019-Oct.csv Ecommerce_Behaviour/
+
+hdfs dfs -ls Ecommerce_Behaviour/
+
+rm 2019-Oct*
+
+hdfs dfs -chmod -R o+w .
+
+beeline
+
+/** CONNECTION STRING FOR BEELINE IS OMITTED FORM CODE
+
+USE [database_name];
+
+CREATE EXTERNAL TABLE ecommerce_behavior (
+event_time STRING,
+event_type STRING,
+product_id BIGINT,
+category_id BIGINT,
+category_code STRING,
+brand STRING,
+price FLOAT,
+user_id BIGINT,
+user_session STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/[user_name]/Ecommerce_Behaviour/'
+TBLPROPERTIES ('skip.header.line.count'='1');
+
+
+SHOW TABLES;
+
+
+SELECT event_time, event_type FORM ecommerce_behavior LIMIT 5;
+
+
+
+CREATE TABLE top_purchased_categories
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/[user_name]/top_purchased_categories/'
+AS
+SELECT REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase'
+GROUP BY REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items DESC
+LIMIT 10;
+
+
+SHOW TABLES;
+
+
+SELECT * FROM top_purchased_categories;
+
+
+CREATE TABLE top_purchased_construction
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/[user_name]/top_purchased_construction/'
+AS
+SELECT REGEXP_EXTRACT(category_code, '(\\w+[^.])$') category_subtype,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND REGEXP_EXTRACT(category_code, '^(\\w+[^.])') = 'construction'
+GROUP BY REGEXP_EXTRACT(category_code, '(\\w+[^.])$')
+ORDER BY total_items DESC
+LIMIT 10;
+
+
+SELECT * FROM top_purchased_construction;
+
+
+CREATE TABLE category_purchased_hour
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/[user_name]/category_purchased_hour/'
+AS
+SELECT SUBSTRING(event_time, 12,2) purchased_hour, COUNT(*) total_purchased
+FROM ecommerce_behavior
+WHERE REGEXP_EXTRACT(category_code, '^(\\w+[^.])') = 'construction' AND
+REGEXP_EXTRACT(category_code, '(\\w+[^.])$') = 'light' AND
+event_type ='purchase'
+GROUP BY SUBSTRING(event_time, 12,2);
+
+
+SHOW TABLES;
+
+
+
+CREATE TABLE top_monthly_category
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/[user_name]/top_monthly_category/'
+AS
+SELECT *
+FROM (SELECT MONTH(event_time) AS calendar_month,
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND
+MONTH(event_time) = '10'
+GROUP BY MONTH(event_time),
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items DESC LIMIT 1) AS u1
+UNION
+SELECT *
+FROM (SELECT MONTH(event_time) AS calendar_month,
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND
+MONTH(event_time) = '11'
+GROUP BY MONTH(event_time),
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items
+DESC LIMIT 1) AS u2
+UNION
+SELECT *
+FROM (SELECT MONTH(event_time) AS calendar_month,
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND
+MONTH(event_time) = '12'
+GROUP BY MONTH(event_time),
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items
+DESC LIMIT 1) AS u3
+UNION
+SELECT *
+FROM (SELECT MONTH(event_time) AS calendar_month,
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND
+MONTH(event_time) = '1'
+GROUP BY MONTH(event_time),
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items
+DESC LIMIT 1) AS u4
+UNION
+SELECT *
+FROM (SELECT MONTH(event_time) AS calendar_month,
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND
+MONTH(event_time) = '2'
+GROUP BY MONTH(event_time),
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items
+DESC LIMIT 1) AS u5
+UNION
+SELECT *
+FROM (SELECT MONTH(event_time) AS calendar_month,
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND
+MONTH(event_time) = '3'
+GROUP BY MONTH(event_time),
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items DESC LIMIT 1) AS u6
+UNION
+SELECT *
+FROM (SELECT MONTH(event_time) AS calendar_month,
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])') category_type,
+COUNT(*) total_items
+FROM ecommerce_behavior
+WHERE event_type = 'purchase' AND
+MONTH(event_time) = '4'
+GROUP BY MONTH(event_time),
+REGEXP_EXTRACT(category_code, '^(\\w+[^.])')
+ORDER BY total_items
+DESC LIMIT 1) AS u7;
+
+
+
+SHOW TABLES;
+
+
+hdfs dfs -get /user/[user_name]/top_purchased_categories/000000_0 top_category.csv
+
+ls .
+
+hdfs dfs -get /user/[user_name]/top_purchased_construction/000000_0 top_construction.csv
+
+hdfs dfs -cat /user/[user_name]/category_purchased_hour/* | hdfs dfs -put - /user/[user_name]/merged_data/purchased_hour.csv
+
+hdfs dfs -ls merged_data/
+
+hdfs dfs -get /user/[username]/merged_data/purchased_hour.csv
+
+hdfs dfs -get /user/[user_name]/top_monthly_category /000000_0 top_monthly_category.csv
+
+scp [user_name]@[IP_ADDRESS]:/home/[user_name]/purchased_hour.csv purchased_hour.csv
+
